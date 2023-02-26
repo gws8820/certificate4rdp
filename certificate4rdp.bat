@@ -16,7 +16,7 @@ echo.
 echo.
 echo 개인 키와 인증서를 PKCS#12 포맷으로 변환합니다. pfx 파일에 사용할 비밀번호를 입력해주세요.
 echo.
-openssl pkcs12 -export -inkey "privkey.pem" -in "fullchain.pem" -out KEY.pf
+openssl pkcs12 -export -inkey "privkey.pem" -in "fullchain.pem" -out KEY.pfx
 echo.
 echo.
 echo Creating KEY.pfx ... Done!
