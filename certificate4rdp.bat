@@ -7,28 +7,37 @@ echo ^| \__/\^|  __/^| ^|   ^| ^|_ ^| ^|^| ^|  ^| ^|^| (__ ^| (_^| ^|^| ^|_ ^|  
 echo  \____/ \___^|^|_^|    \__^|^|_^|^|_^|  ^|_^| \___^| \__,_^| \__^| \___^|    ^|_/\_^| \_^|^|___/  \_^|       \_/  \___/(_)    ^|_/(_)\___/
 echo.
 echo.
-echo * 관리자 권한으로 실행하십시오.
-echo * Openssl v1.1 혹은 v3.0 이상이 필요합니다.
+echo Openssl v1.1 혹은 v3.0 이상이 필요합니다.
 echo.
-echo Copyright 2023. Shilvister All rights reserved.
-echo.
+echo Copyright 2024. Shilvister All rights reserved.
 echo.
 echo.
-echo 개인 키와 인증서를 PKCS#12 포맷으로 변환합니다. pfx 파일에 사용할 비밀번호를 입력해주세요.
+
+bcdedit > nul
+if %errorlevel% == 1 goto CheckUAC
+
+echo Base64 (*.pem) 인증서를 PKCS#12 (*.pfx) 포맷으로 변환합니다. pfx 파일에 사용할 비밀번호를 입력해주세요.
 echo.
-openssl pkcs12 -export -inkey "privkey.pem" -in "fullchain.pem" -out KEY.pfx
+openssl pkcs12 -export -inkey "비밀키.pem" -in "공개키.pem" -out "원하는 파일명.pfx"
 echo.
-echo.
-echo Creating KEY.pfx ... Done!
-echo 인증서가 <Directory>에 저장되었습니다. 
-echo.
-echo.
-echo.
-certutil -f -p "PASSWORD" -importpfx "KEY.pfx"
-echo.
+echo Creating 파일명.pfx ... Done!
+echo pfx 인증서가 현재 디렉터리에 저장되었습니다. 
 echo.
 echo.
-set shell_cmd=openssl x509 -noout -in "fullchain.pem" -fingerprint -sha1
+
+echo 인증서를 설치합니다.
+:Auth
+set /p password=비밀번호를 재입력해 주세요 : 
+echo.
+
+for /f "tokens=*" %%a in ('certutil -f -p "%password%" -importpfx "파일명.pfx"') do set verify=%%a
+if "%verify%" == "CertUtil: The specified network password is not correct." (
+    echo 경고 : 비밀번호가 일치하지 않습니다. 다시 시도해 주세요. 
+    goto Auth)
+echo.
+echo.
+
+set shell_cmd=openssl x509 -noout -in "파일명.pfx" -fingerprint -sha1
 for /f "tokens=2 delims='='" %%f in ('%shell_cmd%') do (set Fingerprint=%%f)
 echo 인증서의 SHA-1 Fingerprint값은 %Fingerprint%입니다.
 echo 인증서의 경로를 레지스트리에 등록합니다.
@@ -38,6 +47,15 @@ reg add "HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Terminal Server\Win
 echo.
 echo.
 echo 인증서 경로 등록이 완료되었습니다.
+echo 인증서 관리자를 통해 인증서의 접근 권한을 수정하시기 바랍니다.
+echo 프로그램을 종료합니다.
+start C:\Windows\System32\certlm.msc
+
+timeout /t 10
+exit
+
+:CheckUAC
+echo 경고 : 관리자 권한으로 실행하십시오!
 echo 프로그램을 종료합니다.
 echo.
-timeout /t 10
+pause
